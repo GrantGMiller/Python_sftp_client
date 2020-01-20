@@ -3,13 +3,17 @@
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 """
-import os,time
+import os, time
 import tempfile
 import paramiko
 import datetime
+
 __version__ = "0.0.2"
+
+
 class Connection(object):
-    def __init__(self,host,username = None,private_key = None,password = None,port = 22,private_key_pass = None,log = False,):
+    def __init__(self, host, username=None, private_key=None, password=None, port=22, private_key_pass=None,
+                 log=False, ):
         self._sftp_live = False
         self._sftp = None
         if not username:
@@ -21,7 +25,7 @@ class Connection(object):
         self._tranport_live = True
 
         if password:
-            self._transport.connect(username = username, password = password)
+            self._transport.connect(username=username, password=password)
         else:
             # Use Private Key.
             if not private_key:
@@ -31,13 +35,13 @@ class Connection(object):
                 elif os.path.exists(os.path.expanduser('~/.ssh/id_dsa')):
                     private_key = '~/.ssh/id_dsa'
                 else:
-                    raise TypeError, "You have not specified a password or key."
+                    raise TypeError("You have not specified a password or key.")
             private_key_file = os.path.expanduser(private_key)
             try:
-                xSx_key = paramiko.RSAKey.from_private_key_file(private_key_file,private_key_pass)
+                xSx_key = paramiko.RSAKey.from_private_key_file(private_key_file, private_key_pass)
             except paramiko.SSHException:
-                xSx_key = paramiko.DSSKey.from_private_key_file(private_key_file,password=private_key_pass)
-            self._transport.connect(username = username, pkey = xSx_key)
+                xSx_key = paramiko.DSSKey.from_private_key_file(private_key_file, password=private_key_pass)
+            self._transport.connect(username=username, pkey=xSx_key)
 
     def _sftp_connect(self):
         """Establish the SFTP connection."""
@@ -54,7 +58,7 @@ class Connection(object):
         """change the current working directory on the remote"""
         self._sftp_connect()
         self._sftp.chdir(path)
-        
+
     def getcwd(self):
         """return the current working directory on the remote"""
         self._sftp_connect()
@@ -69,30 +73,34 @@ class Connection(object):
             return output
         else:
             return channel.makefile_stderr('rb', -1).readlines()
-    def get(self, remotepath, localpath = None):
+
+    def get(self, remotepath, localpath=None):
         """Copies a file between the remote host and the local host."""
         if not localpath:
             localpath = os.path.split(remotepath)[1]
         self._sftp_connect()
         self._sftp.get(remotepath, localpath)
 
-    def put(self, localpath, remotepath = None):
+    def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
         self._sftp_connect()
         self._sftp.put(localpath, remotepath)
-    def get_file_size(self,remotepath):
+
+    def get_file_size(self, remotepath):
         """ Return File size in bytes """
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         self._sftp_connect()
         st = self._sftp.stat(remotepath)
         return st.st_size
-    def get_file_created_data(self,remotepath):
+
+    def get_file_created_data(self, remotepath):
         """ Return the File created time """
         self._sftp_connect()
         st = self._sftp.stat(remotepath)
         return datetime.datetime.strptime(time.ctime(st.st_atime), "%a %b %d %H:%M:%S %Y")
+
     def open(self, filename, mode='r', bufsize=-1):
         """ Open given path File and return file object """
         self._sftp_connect()
@@ -103,11 +111,11 @@ class Connection(object):
         self._sftp_connect()
         self._sftp.rename(oldpath, newpath)
 
-    def mkdir(self, path, mode=0777):
+    def mkdir(self, path, mode=777):
         """ Create New dir on given path, as given file permission """
         self._sftp_connect()
-        self._sftp.mkdir(path, mode=0777)
-        
+        self._sftp.mkdir(path, mode=mode)
+
     def chmod(self, path, mode):
         """ Change the permision of path """
         self._sftp_connect()
